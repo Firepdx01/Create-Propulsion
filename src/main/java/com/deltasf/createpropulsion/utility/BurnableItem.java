@@ -1,20 +1,20 @@
 package com.deltasf.createpropulsion.utility;
 
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
-
+import net.fabricmc.fabric.api.registry.FuelRegistry;
+import net.minecraft.item.Item;
 
 public class BurnableItem extends Item {
-    int burnTime;
+    private final int burnTime;
     
     public BurnableItem(Properties properties, int burnTime) {
         super(properties);
         this.burnTime = burnTime;
+        
+        // Register as fuel in Fabric
+        FuelRegistry.INSTANCE.add(this, burnTime);
     }
-
-    @Override
-    public int getBurnTime(ItemStack stack, RecipeType<?> recipeType) {
+    
+    public int getBurnTime() {
         return burnTime;
     }
 }

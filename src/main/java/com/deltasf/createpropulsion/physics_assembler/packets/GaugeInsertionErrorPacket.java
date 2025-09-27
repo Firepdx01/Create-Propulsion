@@ -1,33 +1,32 @@
 package com.deltasf.createpropulsion.physics_assembler.packets;
 
-import java.util.function.Supplier;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.network.NetworkEvent;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.text.Text;
 
 public class GaugeInsertionErrorPacket {
 
-    private final Component message;
+    private final Text message;
 
-    public GaugeInsertionErrorPacket(Component message) {
+    public GaugeInsertionErrorPacket(Text message) {
         this.message = message;
     }
 
-    public GaugeInsertionErrorPacket(FriendlyByteBuf buf) {
-        this.message = buf.readComponent();
+    public GaugeInsertionErrorPacket(PacketByteBuf buf) {
+        this.message = buf.readText();
     }
 
-    public void encode(FriendlyByteBuf buf) {
-        buf.writeComponent(message);
+    public PacketByteBuf toPacketByteBuf() {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeText(message);
+        return buf;
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.gui instanceof ForgeGui gui) {
-            gui.setOverlayMessage(message, false);
+    public void handle() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.inGameHud != null) {
+            mc.inGameHud.setOverlayMessage(message, false);
         }
     }
 }

@@ -1,33 +1,32 @@
 package com.deltasf.createpropulsion.physics_assembler.packets;
 
 import com.deltasf.createpropulsion.physics_assembler.AssemblyGaugeItem;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayNetworkHandler;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Hand;
+import net.minecraft.item.ItemStack;
 
 public class ResetGaugePacket {
 
     public ResetGaugePacket() {}
 
-    public ResetGaugePacket(FriendlyByteBuf buf) {}
+    public ResetGaugePacket(PacketByteBuf buf) {}
 
-    public void encode(FriendlyByteBuf buf) {}
+    public PacketByteBuf toPacketByteBuf() {
+        return PacketByteBufs.create();
+    }
 
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) return;
-
-            ItemStack stack = player.getItemInHand(InteractionHand.MAIN_HAND);
+    public static void handle(MinecraftServer server, ServerPlayerEntity player, 
+                             ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        server.execute(() -> {
+            ItemStack stack = player.getStackInHand(Hand.MAIN_HAND);
             if (stack.getItem() instanceof AssemblyGaugeItem) {
                 AssemblyGaugeItem.resetPositions(stack, player);
             }
         });
-        return true;
     }
 }

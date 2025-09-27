@@ -1,59 +1,42 @@
 package com.deltasf.createpropulsion.registries;
 
-import javax.annotation.Nonnull;
-
 import com.deltasf.createpropulsion.CreatePropulsion;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.CreativeModeTab.DisplayItemsGenerator;
-import net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
-import net.minecraft.world.item.CreativeModeTab.Output;
-
-@EventBusSubscriber(bus = Bus.MOD)
 public class PropulsionCreativeTab {
-    private static final DeferredRegister<CreativeModeTab> REGISTER = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreatePropulsion.ID);
-
-        public static final RegistryObject<CreativeModeTab> BASE_TAB = REGISTER.register("base", 
-        () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.createpropulsion.base"))
-            .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
-            .icon(() -> PropulsionBlocks.THRUSTER_BLOCK.asStack())
-            .displayItems(new RegistrateDisplayItemsGenerator())
+    
+    public static final ItemGroup BASE_TAB = Registry.register(Registries.ITEM_GROUP,
+        new Identifier(CreatePropulsion.ID, "base"),
+        FabricItemGroup.builder()
+            .displayName(Text.translatable("itemGroup.createpropulsion.base"))
+            .icon(() -> new ItemStack(PropulsionBlocks.THRUSTER_BLOCK))
+            .entries((displayContext, entries) -> {
+                // From 0.1
+                entries.add(PropulsionBlocks.INLINE_OPTICAL_SENSOR_BLOCK);
+                entries.add(PropulsionBlocks.OPTICAL_SENSOR_BLOCK);
+                entries.add(PropulsionBlocks.THRUSTER_BLOCK);
+                // From 0.2
+                entries.add(PropulsionBlocks.LODESTONE_TRACKER_BLOCK);
+                entries.add(PropulsionBlocks.REDSTONE_MAGNET_BLOCK);
+                entries.add(PropulsionBlocks.PHYSICS_ASSEMBLER_BLOCK);
+                // From 0.2 (items)
+                entries.add(PropulsionItems.ASSEMBLY_GAUGE);
+                entries.add(PropulsionFluids.getBucket());
+                entries.add(PropulsionItems.PINE_RESIN);
+                entries.add(PropulsionItems.OPTICAL_LENS);
+                entries.add(PropulsionItems.FLUID_LENS);
+                entries.add(PropulsionItems.FOCUS_LENS);
+                entries.add(PropulsionItems.INVISIBILITY_LENS);
+            })
             .build());
-
-        public static void register(IEventBus modEventBus){
-            REGISTER.register(modEventBus);
-        }
-
-        private static class RegistrateDisplayItemsGenerator implements DisplayItemsGenerator {
-            public RegistrateDisplayItemsGenerator() {}
-
-            @Override
-            public void accept(@Nonnull ItemDisplayParameters parameters, @Nonnull Output output) {
-                //From 0.1
-                output.accept(PropulsionBlocks.INLINE_OPTICAL_SENSOR_BLOCK);
-                output.accept(PropulsionBlocks.OPTICAL_SENSOR_BLOCK);
-                output.accept(PropulsionBlocks.THRUSTER_BLOCK);
-                //From 0.2
-                output.accept(PropulsionBlocks.LODESTONE_TRACKER_BLOCK);
-                output.accept(PropulsionBlocks.REDSTONE_MAGNET_BLOCK);
-                output.accept(PropulsionBlocks.PHYSICS_ASSEMBLER_BLOCK);
-                //From 0.2 (items)
-                output.accept(PropulsionItems.ASSEMBLY_GAUGE);
-                output.accept(PropulsionFluids.TURPENTINE.getBucket().get());
-                output.accept(PropulsionItems.PINE_RESIN);
-                output.accept(PropulsionItems.OPTICAL_LENS);
-                output.accept(PropulsionItems.FLUID_LENS);
-                output.accept(PropulsionItems.FOCUS_LENS);
-                output.accept(PropulsionItems.INVISIBILITY_LENS);
-            }
-        }
+    
+    public static void register() {
+        // This method is called to ensure the class is loaded
+    }
 }

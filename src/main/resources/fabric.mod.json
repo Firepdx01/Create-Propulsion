@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "createpropulsion",
+  "version": "${version}",
+  "name": "Create: Propulsion",
+  "description": "A mod that adds optical sensors and thruster to the Create mod. All stuff works with Valkyrien Skies 2!",
+  "authors": [
+    "Sergey Feduk"
+  ],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/create-propulsion",
+    "sources": "https://github.com/SergeyFeduk/Create-Propulsion"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.deltasf.createpropulsion.CreatePropulsion"
+    ],
+    "client": [
+      "com.deltasf.createpropulsion.CreatePropulsionClient"
+    ]
+  },
+  "mixins": [
+    "createpropulsion.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=17",
+    "fabric-api": "*",
+    "create": ">=0.5.1",
+    "valkyrienskies": "*"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "rei": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": ["library"],
+      "parent": {
+        "id": "create",
+        "name": "Create",
+        "badges": ["library"],
+        "icon": "create:item/brass_ingot"
+      }
+    }
+  }
+}

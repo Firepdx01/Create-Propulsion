@@ -4,38 +4,44 @@ import com.deltasf.createpropulsion.CreatePropulsion;
 import com.deltasf.createpropulsion.optical_sensors.OpticalLensItem;
 import com.deltasf.createpropulsion.physics_assembler.AssemblyGaugeItem;
 import com.deltasf.createpropulsion.utility.BurnableItem;
-//import com.deltasf.createpropulsion.design_goggles.DesignGogglesItem;
-import com.simibubi.create.foundation.data.CreateRegistrate;
-import com.tterrag.registrate.util.entry.ItemEntry;
-
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.minecraft.item.Item;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.tag.TagKey;
+import net.minecraft.util.Identifier;
 
 public class PropulsionItems {
-    public static final CreateRegistrate REGISTRATE = CreatePropulsion.registrate();
-    public static void register() {} //Loads this class
-
-    public static final ItemEntry<BurnableItem> PINE_RESIN = REGISTRATE.item("pine_resin", p -> new BurnableItem(p, 1200)).register();
-    //Lenses
-    public static final ItemEntry<OpticalLensItem> OPTICAL_LENS = REGISTRATE.item("optical_lens", OpticalLensItem::new).register();
-    public static final ItemEntry<Item> FLUID_LENS = REGISTRATE.item("fluid_lens", Item::new).register();
-    public static final ItemEntry<Item> FOCUS_LENS = REGISTRATE.item("focus_lens", Item::new).register();
-    public static final ItemEntry<Item> INVISIBILITY_LENS = REGISTRATE.item("invisibility_lens", Item::new).register();
-    public static final ItemEntry<Item> UNFINISHED_LENS = REGISTRATE.item("unfinished_lens", Item::new).register();
-
-    //public static final ItemEntry<DesignGogglesItem> DESIGN_GOGGLES = REGISTRATE.item("design_goggles", DesignGogglesItem::new).register();
-    public static final ItemEntry<AssemblyGaugeItem> ASSEMBLY_GAUGE = REGISTRATE.item("assembly_gauge", AssemblyGaugeItem::new)
-        .properties(p -> p.stacksTo(1))
-        .register();
-
+    
+    public static final BurnableItem PINE_RESIN = register("pine_resin", 
+        new BurnableItem(new FabricItemSettings(), 1200));
+    
+    // Lenses
+    public static final OpticalLensItem OPTICAL_LENS = register("optical_lens", 
+        new OpticalLensItem(new FabricItemSettings()));
+    public static final Item FLUID_LENS = register("fluid_lens", 
+        new Item(new FabricItemSettings()));
+    public static final Item FOCUS_LENS = register("focus_lens", 
+        new Item(new FabricItemSettings()));
+    public static final Item INVISIBILITY_LENS = register("invisibility_lens", 
+        new Item(new FabricItemSettings()));
+    public static final Item UNFINISHED_LENS = register("unfinished_lens", 
+        new Item(new FabricItemSettings()));
+    
+    public static final AssemblyGaugeItem ASSEMBLY_GAUGE = register("assembly_gauge", 
+        new AssemblyGaugeItem(new FabricItemSettings().maxCount(1)));
+    
     public static final TagKey<Item> OPTICAL_LENS_TAG = makeTag("optical_lens");
-
+    
+    private static <T extends Item> T register(String name, T item) {
+        return Registry.register(Registries.ITEM, new Identifier(CreatePropulsion.ID, name), item);
+    }
+    
     public static TagKey<Item> makeTag(String key) {
-        ResourceLocation resource = new ResourceLocation(CreatePropulsion.ID, key);
-        TagKey<Item> tag = TagKey.create(Registries.ITEM, resource);
-        //No datagen :(
-        return tag;
+        return TagKey.of(Registries.ITEM.getKey(), new Identifier(CreatePropulsion.ID, key));
+    }
+    
+    public static void register() {
+        // This method is called to ensure the class is loaded
     }
 }

@@ -1,39 +1,44 @@
 package com.deltasf.createpropulsion.physics_assembler.packets;
 
 import com.deltasf.createpropulsion.physics_assembler.AssemblyGaugeOverlayRenderer;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.math.Box;
 
 public class GaugeUsedPacket {
-    private final AABB selection;
+    private final Box selection;
+    private MinecraftServer server;
 
-    public GaugeUsedPacket(AABB selection) {
+    public GaugeUsedPacket(Box selection) {
         this.selection = selection;
     }
 
-    public GaugeUsedPacket(FriendlyByteBuf buf) {
-        this.selection = new AABB(buf.readDouble(), buf.readDouble(), buf.readDouble(),
+    public GaugeUsedPacket(PacketByteBuf buf) {
+        this.selection = new Box(buf.readDouble(), buf.readDouble(), buf.readDouble(),
                                   buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 
-    public void encode(FriendlyByteBuf buf) {
+    public PacketByteBuf toPacketByteBuf() {
+        PacketByteBuf buf = PacketByteBufs.create();
         buf.writeDouble(selection.minX);
         buf.writeDouble(selection.minY);
         buf.writeDouble(selection.minZ);
         buf.writeDouble(selection.maxX);
         buf.writeDouble(selection.maxY);
         buf.writeDouble(selection.maxZ);
+        return buf;
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            AssemblyGaugeOverlayRenderer.triggerFlash(this.selection);
-        }));
-        context.get().setPacketHandled(true);
+    public void handle() {
+        AssemblyGaugeOverlayRenderer.triggerFlash(selection);
+    }
+    
+    public MinecraftServer getServer() {
+        return server;
+    }
+    
+    public void setServer(MinecraftServer server) {
+        this.server = server;
     }
 }

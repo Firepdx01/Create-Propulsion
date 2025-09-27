@@ -14,13 +14,13 @@ import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.fabricmc.loader.api.FabricLoader;
 
 public class PropulsionMixinPlugin implements IMixinConfigPlugin {
     private static final Map<String, Supplier<Boolean>> CONDITIONS = new HashMap<>();
 
     static {
-        CONDITIONS.put("is_vsaddition_not_loaded", () -> FMLLoader.getLoadingModList().getModFileById("vs_addition") == null);
+        CONDITIONS.put("is_vsaddition_not_loaded", () -> !FabricLoader.getInstance().isModLoaded("vs_addition"));
     }
 
     @Override
@@ -29,7 +29,7 @@ public class PropulsionMixinPlugin implements IMixinConfigPlugin {
             ClassNode mixinClassNode = getClassNode(mixinClassName);
             String condition = getAnnotationValue(mixinClassNode, MixinIf.class);
 
-            if (condition == null) { //Not annotated
+            if (condition == null) {
                 return true;
             }
 
@@ -37,7 +37,7 @@ public class PropulsionMixinPlugin implements IMixinConfigPlugin {
             if (conditionSupplier == null) {
                 throw new RuntimeException("Unknown mixin condition '" + condition + "' for mixin " + mixinClassName);
             }
-            System.out.println("Mixin " + mixinClassName + "is " + (conditionSupplier.get() ? "applied" : "not applied"));
+            System.out.println("Mixin " + mixinClassName + " is " + (conditionSupplier.get() ? "applied" : "not applied"));
             return conditionSupplier.get();
         } catch (IOException e) {
             throw new RuntimeException("Could not read mixin class " + mixinClassName, e);
@@ -57,7 +57,6 @@ public class PropulsionMixinPlugin implements IMixinConfigPlugin {
         return classNode;
     }
 
-
     private <T> String getAnnotationValue(ClassNode classNode, Class<T> annotationClass) {
         String annotationDescriptor = "L" + annotationClass.getName().replace('.', '/') + ";";
         if (classNode.visibleAnnotations != null) {
@@ -72,19 +71,16 @@ public class PropulsionMixinPlugin implements IMixinConfigPlugin {
         return null;
     }
 
-    //Hehe
     @Override
     public void onLoad(String mixinPackage) {}
     @Override
     public String getRefMapperConfig() { return null; }
     @Override
     public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
-
     @Override
     public List<String> getMixins() { return null; }
     @Override
     public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
-
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 }

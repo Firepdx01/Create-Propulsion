@@ -15,32 +15,33 @@ import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.JsonOps;
 
-import net.minecraft.resources.ResourceLocation;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
-import net.minecraft.tags.TagKey;
-import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraft.util.Identifier;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
+import net.minecraft.registry.Registries;
+import net.fabricmc.loader.api.FabricLoader;
 
 import com.deltasf.createpropulsion.network.SyncThrusterFuelsPacket;
 
-public class ThrusterFuelManager extends SimpleJsonResourceReloadListener {
+public class ThrusterFuelManager implements SimpleSynchronousResourceReloadListener {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     public static final String DIRECTORY = "thruster_fuels";
 
     private static Map<Fluid, FluidThrusterProperties> fuelPropertiesMap = new HashMap<>();
-    public static final TagKey<Fluid> FORGE_FUEL_TAG = TagKey.create(ForgeRegistries.FLUIDS.getRegistryKey(), new ResourceLocation("forge", "fuel"));
+    public static final TagKey<Fluid> FORGE_FUEL_TAG = TagKey.of(Registries.FLUID.getKey(), new Identifier("c", "fuel"));
 
-    public static Map<Fluid, FluidThrusterProperties> getFuelPropertiesMap() { return fuelPropertiesMap; }
+    public static Map<Fluid, FluidThrusterProperties> getFuelPropertiesMap() { 
+        return fuelPropertiesMap; 
+    }
 
-    public ThrusterFuelManager() {
-        super(GSON, DIRECTORY);
+    @Override
+    public Identifier getFabricId() {
+        return new Identifier(CreatePropulsion.ID, "thruster_fuels");
     }
 
     @Nullable
@@ -51,27 +52,38 @@ public class ThrusterFuelManager extends SimpleJsonResourceReloadListener {
         if (props != null) {
             return props;
         }
-        if (fluid.is(FORGE_FUEL_TAG)) return FluidThrusterProperties.DEFAULT;
+        if (fluid.isIn(FORGE_FUEL_TAG)) return FluidThrusterProperties.DEFAULT;
         return null;
     }
 
     @Override
-    protected void apply(@Nonnull Map<ResourceLocation, JsonElement> pObject, @Nonnull ResourceManager resourceManager, @Nonnull ProfilerFiller profiler) {
-        //Parse datapacks
-        profiler.push(CreatePropulsion.ID + ":Loading_thruster_fuels");
-        fuelPropertiesMap = parseFuelProperties(pObject);
-        profiler.pop();
-        //Update clients (happens only on /reload as on server start server instance is still null)
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server != null && server.isRunning()) {
-            PropulsionPackets.sendToAll(SyncThrusterFuelsPacket.create(fuelPropertiesMap));
-        }
+    public void reload(ResourceManager manager) {
+        fuelPropertiesMap.clear();
+        
+        Map<Identifier, JsonElement> resources = new HashMap<>();
+        manager.findResources(DIRECTORY, id -> id.getPath().endsWith(".json"))
+            .forEach((id, resource) -> {
+                try {
+                    JsonElement json = GSON.fromJson(
+                        new java.io.InputStreamReader(resource.getInputStream()), 
+                        JsonElement.class
+                    );
+                    resources.put(id, json);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load thruster fuel from {}", id, e);
+                }
+            });
+        
+        fuelPropertiesMap = parseFuelProperties(resources);
+        
+        // Note: Client sync would need to be handled differently in Fabric
+        // This would typically be done through a server resource reload event
     }
 
-    public static void updateClient(Map<ResourceLocation, FluidThrusterProperties> fuelMap) {
+    public static void updateClient(Map<Identifier, FluidThrusterProperties> fuelMap) {
         Map<Fluid, FluidThrusterProperties> newClientMap = new HashMap<>();
         fuelMap.forEach((rl, props) -> {
-            Fluid fluid = ForgeRegistries.FLUIDS.getValue(rl);
+            Fluid fluid = Registries.FLUID.get(rl);
             if (fluid != null) {
                 newClientMap.put(fluid, props);
             }
@@ -79,27 +91,25 @@ public class ThrusterFuelManager extends SimpleJsonResourceReloadListener {
         fuelPropertiesMap = newClientMap;
     }
 
-    private Map<Fluid, FluidThrusterProperties> parseFuelProperties(@Nonnull Map<ResourceLocation, JsonElement> pObject) {
+    private Map<Fluid, FluidThrusterProperties> parseFuelProperties(@Nonnull Map<Identifier, JsonElement> resources) {
         Map<Fluid, FluidThrusterProperties> newMap = new HashMap<>();
 
-        for (Map.Entry<ResourceLocation, JsonElement> entry : pObject.entrySet()) {
-            ResourceLocation file = entry.getKey();
+        for (Map.Entry<Identifier, JsonElement> entry : resources.entrySet()) {
+            Identifier file = entry.getKey();
             JsonElement json = entry.getValue();
 
-            // Parse fuel def
             ThrusterFuelDefinition.CODEC.parse(JsonOps.INSTANCE, json)
-                .resultOrPartial(error -> {LOGGER.error("[{}] Failed to parse thruster fuel definition from {}: {}", CreatePropulsion.ID, file, error);})
+                .resultOrPartial(error -> {
+                    LOGGER.error("[{}] Failed to parse thruster fuel definition from {}: {}", CreatePropulsion.ID, file, error);
+                })
                 .ifPresent(definition -> {
-                    //There is a fuel that requires a mod but the mod is not present
-                    if (definition.requiredMod().isPresent() && !ModList.get().isLoaded(definition.requiredMod().get())) {
+                    if (definition.requiredMod().isPresent() && !FabricLoader.getInstance().isModLoaded(definition.requiredMod().get())) {
                         return;
                     }
                     Fluid fluid = definition.getFluid();
-                    //Fluid is not in registry
                     if (fluid == Fluids.EMPTY) {
                         return;
                     }
-                    //Successfully load fuel
                     FluidThrusterProperties properties = new FluidThrusterProperties(
                         definition.thrustMultiplier(), 
                         definition.consumptionMultiplier());
