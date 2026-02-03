@@ -3,6 +3,7 @@ package com.deltasf.createpropulsion;
 import com.deltasf.createpropulsion.events.FabricClientEvents;
 import com.deltasf.createpropulsion.particles.ParticleTypes;
 import com.deltasf.createpropulsion.registries.PropulsionBlockEntities;
+import com.deltasf.createpropulsion.registries.PropulsionFluids;
 import com.deltasf.createpropulsion.registries.PropulsionItems;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
